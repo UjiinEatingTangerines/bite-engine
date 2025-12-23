@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Map, MapPin } from "lucide-react"
+import { Map, MapPin, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Restaurant } from "@/lib/mock-data"
 
@@ -12,6 +12,7 @@ interface MiniMapProps {
 
 export function MiniMap({ topRestaurants }: MiniMapProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const hasData = topRestaurants.length > 0
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
@@ -20,9 +21,11 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
           <Map className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground">TOP 3 위치</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} className="text-xs">
-          지도 {isOpen ? "숨기기" : "보기"}
-        </Button>
+        {hasData && (
+          <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} className="text-xs">
+            지도 {isOpen ? "숨기기" : "보기"}
+          </Button>
+        )}
       </div>
 
       <AnimatePresence>
@@ -105,7 +108,7 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
         )}
       </AnimatePresence>
 
-      {!isOpen && (
+      {!isOpen && hasData && (
         <div className="flex items-center gap-2">
           {topRestaurants.slice(0, 3).map((restaurant, index) => (
             <div
@@ -121,6 +124,14 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
               {restaurant.name.split(" ")[0]}
             </div>
           ))}
+        </div>
+      )}
+
+      {!hasData && (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Clock className="w-10 h-10 text-muted-foreground/30 mb-3 animate-pulse" />
+          <p className="text-sm text-muted-foreground">위치 정보 준비 중</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">레스토랑이 추가되면 표시됩니다</p>
         </div>
       )}
     </div>
