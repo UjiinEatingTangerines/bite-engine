@@ -122,7 +122,7 @@ export default function BiteEnginePage() {
 
             {/* Bento Grid - Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <PreferenceMatrix scores={teamScores} />
+              <PreferenceMatrix scores={teamScores} hasData={restaurants.length > 0 && totalVotes > 0} />
               <VoteCounter totalVotes={totalVotes} />
               <MiniMap topRestaurants={sortedRestaurants.slice(0, 3)} />
             </div>
