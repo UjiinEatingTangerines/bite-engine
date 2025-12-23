@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .map((place, index) => ({
         name: place.place_name,
         cuisine: getCuisineFromCategory(place.category_name),
-        image: '/placeholder.svg', // 기본 이미지
+        image: null, // 실제 이미지 URL이 없으므로 null (fallback UI 사용)
         rating: estimateRating(),
         distance: formatDistance(place.distance),
         price_range: estimatePriceRange(place.category_name),

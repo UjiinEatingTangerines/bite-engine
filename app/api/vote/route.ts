@@ -6,6 +6,14 @@ export async function POST(request: NextRequest) {
     const { userId, userName, userAvatar, restaurantId, restaurantName } =
       await request.json()
 
+    // 입력 검증
+    if (!userId || !userName || !restaurantId || !restaurantName) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
     // 기존 투표 삭제 (투표 변경)
     await supabase
       .from('votes')
@@ -53,6 +61,13 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await request.json()
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Missing userId' },
+        { status: 400 }
+      )
+    }
 
     await supabase
       .from('votes')

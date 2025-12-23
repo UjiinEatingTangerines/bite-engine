@@ -23,7 +23,8 @@
       "Bash(pnpm add:*)",
       "Bash(curl:*)",
       "Bash(pnpm run build:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

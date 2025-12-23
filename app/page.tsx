@@ -51,8 +51,8 @@ export default function BiteEnginePage() {
   }, [restaurants, activeFilters])
 
   const totalVotes = restaurants.reduce((sum, r) => sum + r.votes, 0)
-  const leadingRestaurant = sortedRestaurants[0]?.name || ""
-  const aiRecommendation = restaurants.find((r) => r.badges.includes("AI 추천")) || restaurants[0]
+  const leadingRestaurant = sortedRestaurants[0]?.name || "아직 없음"
+  const aiRecommendation = restaurants.find((r) => r.badges.includes("AI 추천")) || restaurants[0] || null
 
   const handleVote = async (id: string) => {
     if (votedRestaurant === id) return
@@ -116,7 +116,9 @@ export default function BiteEnginePage() {
           {/* Main content area */}
           <div className="lg:col-span-3 space-y-6">
             {/* Smart Match Hero */}
-            <SmartMatchHero user={currentUser} recommendation={aiRecommendation} onVote={handleVote} />
+            {aiRecommendation && (
+              <SmartMatchHero user={currentUser} recommendation={aiRecommendation} onVote={handleVote} />
+            )}
 
             {/* Bento Grid - Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

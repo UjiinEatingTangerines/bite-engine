@@ -41,7 +41,7 @@ export function RestaurantCard({ restaurant, onVote, hasVoted, rank }: Restauran
       )}
     >
       <div className="relative h-36 overflow-hidden bg-muted">
-        {restaurant.image && restaurant.image !== '/placeholder.svg' ? (
+        {restaurant.image && restaurant.image !== '/placeholder.svg' && restaurant.image !== '' ? (
           <Image
             src={restaurant.image}
             alt={restaurant.name}
