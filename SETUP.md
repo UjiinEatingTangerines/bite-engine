@@ -8,7 +8,7 @@
 2. "New Project" 클릭
 3. 프로젝트 정보 입력:
    - **Name**: `bite-engine` (또는 원하는 이름)
-   - **Database Password**: 강력한 비밀번호 생성 (저장 필수!)
+   - **Database Password**: 강력한 비밀번호 생성 (저장 필수!) -- iR4yDtp!HvdF76J
    - **Region**: Northeast Asia (Seoul) - 한국에서 가장 빠름
 4. "Create new project" 클릭 (약 2분 소요)
 
@@ -24,7 +24,7 @@
 
 1. Supabase Dashboard → **Settings** → **API** 이동
 2. 다음 값들을 복사:
-   - **Project URL** (예: `https://xxxxx.supabase.co`)
+   - **Project URL** (예: `https://xxxxx.supabase.co`) 
    - **anon public key** (긴 문자열, `eyJhbGc...`로 시작)
 
 3. 프로젝트 루트에 `.env.local` 파일 생성:

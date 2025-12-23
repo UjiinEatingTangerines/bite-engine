@@ -12,7 +12,16 @@
       "Bash(nvm install:*)",
       "Bash(nvm use:*)",
       "Bash(source:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo view:*)",
+      "Bash(pnpm add:*)",
+      "Bash(curl:*)"
     ]
   }
 }

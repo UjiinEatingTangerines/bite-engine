@@ -123,26 +123,5 @@ CREATE POLICY "Anyone can insert activities"
   ON vote_activities FOR INSERT
   WITH CHECK (true);
 
--- 초기 샘플 데이터 입력
-INSERT INTO restaurants (name, cuisine, image, rating, distance, price_range, badges, dietary) VALUES
-('사쿠라 스시 하우스', '일식', '/elegant-sushi-restaurant.png', 4.8, '0.5km', '$$',
-  '["AI 추천", "사무실 근처"]'::jsonb, '["비건 옵션", "글루텐 프리"]'::jsonb),
-('서울 키친 BBQ', '한식', '/korean-bbq-restaurant-grilling.jpg', 4.6, '1.3km', '$$$',
-  '["백엔드팀 인기"]'::jsonb, '["육식주의"]'::jsonb),
-('스파이스 루트', '인도식', '/indian-restaurant-colorful-interior.jpg', 4.5, '0.8km', '$$',
-  '["가성비 최고"]'::jsonb, '["비건 옵션", "매운맛"]'::jsonb),
-('타코 피에스타', '멕시코', '/vibrant-mexican-restaurant-tacos.jpg', 4.3, '0.3km', '$',
-  '["가성비 최고", "사무실 근처"]'::jsonb, '["비건 옵션"]'::jsonb),
-('지중해 오아시스', '지중해식', '/mediterranean-restaurant-hummus-falafel.jpg', 4.4, '1.6km', '$$',
-  '[]'::jsonb, '["비건 옵션", "채식주의"]'::jsonb),
-('파스타 팰리스', '이탈리안', '/italian-restaurant-pasta-wine.jpg', 4.7, '1.9km', '$$$',
-  '[]'::jsonb, '["채식주의"]'::jsonb)
-ON CONFLICT DO NOTHING;
-
--- 현재 활성 세션 생성
-INSERT INTO dinner_sessions (title, status) VALUES
-('12월 팀 회식', 'active')
-ON CONFLICT DO NOTHING;
-
 -- 완료 메시지
 SELECT 'BiteEngine 데이터베이스 셋업 완료!' AS message;
