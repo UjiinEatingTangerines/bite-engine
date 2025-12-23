@@ -181,7 +181,18 @@ export default function BiteEnginePage() {
               </LayoutGroup>
 
               {sortedRestaurants.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">선택한 식이 필터에 맞는 맛집이 없습니다</div>
+                <div className="text-center py-12">
+                  <p className="text-lg text-muted-foreground mb-2">
+                    {activeFilters.length > 0
+                      ? "선택한 식이 필터에 맞는 맛집이 없습니다"
+                      : "등록된 레스토랑이 비어 있습니다"}
+                  </p>
+                  {restaurants.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      <a href="/admin" className="text-primary hover:underline">/admin</a> 페이지에서 레스토랑을 추가해주세요
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
