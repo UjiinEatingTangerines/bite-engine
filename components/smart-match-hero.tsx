@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { Sparkles, ChevronRight, Star, MapPin, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,12 +41,20 @@ export function SmartMatchHero({ user, recommendation, onVote }: SmartMatchHeroP
         <p className="text-muted-foreground mb-6">오늘의 추천 맛집:</p>
 
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="relative w-full md:w-48 h-32 rounded-xl overflow-hidden flex-shrink-0">
-            <img
-              src={recommendation.image || "/placeholder.svg"}
-              alt={recommendation.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative w-full md:w-48 h-32 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+            {recommendation?.image && recommendation.image !== '/placeholder.svg' ? (
+              <Image
+                src={recommendation.image}
+                alt={recommendation?.name || '추천 레스토랑'}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                <span className="text-4xl opacity-20">{recommendation?.cuisine?.[0] || '?'}</span>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
             <div className="absolute bottom-2 left-2 right-2">
               <Badge className="bg-primary text-primary-foreground">AI 추천</Badge>

@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { Star, MapPin, ThumbsUp, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -39,12 +40,20 @@ export function RestaurantCard({ restaurant, onVote, hasVoted, rank }: Restauran
         rank === 1 ? "border-primary/50 shadow-lg shadow-primary/10" : "border-border",
       )}
     >
-      <div className="relative h-36 overflow-hidden">
-        <img
-          src={restaurant.image || "/placeholder.svg"}
-          alt={restaurant.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+      <div className="relative h-36 overflow-hidden bg-muted">
+        {restaurant.image && restaurant.image !== '/placeholder.svg' ? (
+          <Image
+            src={restaurant.image}
+            alt={restaurant.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <span className="text-4xl opacity-20">{restaurant.cuisine[0]}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 
         {rank <= 3 && (
@@ -70,7 +79,7 @@ export function RestaurantCard({ restaurant, onVote, hasVoted, rank }: Restauran
                   <Tooltip key={viewer.id}>
                     <TooltipTrigger asChild>
                       <Avatar className="w-6 h-6 border-2 border-card">
-                        <AvatarImage src={viewer.avatar || "/placeholder.svg"} />
+                        <AvatarImage src={viewer.avatar && viewer.avatar !== '/placeholder.svg' ? viewer.avatar : undefined} />
                         <AvatarFallback className="text-xs">{viewer.name[0]}</AvatarFallback>
                       </Avatar>
                     </TooltipTrigger>

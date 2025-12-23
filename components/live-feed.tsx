@@ -51,7 +51,7 @@ export function LiveFeed({ activities, leadingRestaurant }: LiveFeedProps) {
             >
               <div className="relative">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={activity.avatar || "/placeholder.svg"} />
+                  <AvatarImage src={activity.avatar && activity.avatar !== '/placeholder.svg' ? activity.avatar : undefined} />
                   <AvatarFallback>{activity.user[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-card" />
