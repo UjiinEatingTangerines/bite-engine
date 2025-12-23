@@ -13,19 +13,19 @@ import { RestaurantCard } from "@/components/restaurant-card"
 import { MiniMap } from "@/components/mini-map"
 import { Confetti } from "@/components/confetti"
 import { Button } from "@/components/ui/button"
+import { useRestaurants } from "@/hooks/use-restaurants"
+import { useVoteActivities } from "@/hooks/use-vote-activities"
 import {
-  restaurants as initialRestaurants,
-  voteActivities,
   teamScores,
   dietaryFilters,
   currentUser,
-  type Restaurant,
-  type VoteActivity,
 } from "@/lib/mock-data"
 
 export default function BiteEnginePage() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants)
-  const [activities, setActivities] = useState<VoteActivity[]>(voteActivities)
+  // 실제 데이터 사용
+  const { restaurants, loading } = useRestaurants()
+  const { activities } = useVoteActivities()
+
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [votedRestaurant, setVotedRestaurant] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
@@ -54,35 +54,34 @@ export default function BiteEnginePage() {
   const leadingRestaurant = sortedRestaurants[0]?.name || ""
   const aiRecommendation = restaurants.find((r) => r.badges.includes("AI 추천")) || restaurants[0]
 
-  const handleVote = (id: string) => {
+  const handleVote = async (id: string) => {
     if (votedRestaurant === id) return
 
-    setRestaurants((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          return { ...r, votes: r.votes + 1 }
-        }
-        if (r.id === votedRestaurant) {
-          return { ...r, votes: Math.max(0, r.votes - 1) }
-        }
-        return r
-      }),
-    )
-
     const restaurant = restaurants.find((r) => r.id === id)
-    if (restaurant) {
-      const newActivity: VoteActivity = {
-        id: String(Date.now()),
-        user: currentUser.name,
-        avatar: "/professional-smiling-man-headshot.png",
-        action: votedRestaurant ? "로 투표를 변경했습니다" : "에 투표했습니다",
-        restaurant: restaurant.name,
-        timestamp: new Date(),
-      }
-      setActivities((prev) => [newActivity, ...prev.slice(0, 9)])
-    }
+    if (!restaurant) return
 
-    setVotedRestaurant(id)
+    try {
+      // API를 통해 투표 전송
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.name,
+          userName: currentUser.name,
+          userAvatar: '/professional-smiling-man-headshot.png',
+          restaurantId: id,
+          restaurantName: restaurant.name,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to vote')
+
+      setVotedRestaurant(id)
+      // 실시간 구독이 자동으로 데이터를 업데이트합니다
+    } catch (error) {
+      console.error('Failed to vote:', error)
+      alert('투표에 실패했습니다. 다시 시도해주세요.')
+    }
   }
 
   const handleFilterToggle = (id: string) => {
@@ -93,6 +92,18 @@ export default function BiteEnginePage() {
     setIsFinalized(true)
     setShowConfetti(true)
     setTimeout(() => setShowConfetti(false), 3000)
+  }
+
+  // 로딩 상태 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-foreground">레스토랑 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
