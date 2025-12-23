@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew update:*)",
+      "Bash(brew upgrade:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(node --version:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dev)",
+      "Bash(nvm install:*)",
+      "Bash(nvm use:*)",
+      "Bash(source:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}
