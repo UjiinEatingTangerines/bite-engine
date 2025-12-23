@@ -22,7 +22,8 @@
       "Bash(gh repo view:*)",
       "Bash(pnpm add:*)",
       "Bash(curl:*)",
-      "Bash(pnpm run build:*)"
+      "Bash(pnpm run build:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
