@@ -21,7 +21,8 @@
       "Bash(git push:*)",
       "Bash(gh repo view:*)",
       "Bash(pnpm add:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pnpm run build:*)"
     ]
   }
 }
