@@ -1,8 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Utensils, Settings, LogOut, LogIn, UserCog, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Utensils, LogOut, LogIn, UserCog, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationDropdown } from "@/components/notification-dropdown"
 import { useAuth } from "@/contexts/auth-context"
@@ -60,9 +59,6 @@ export function Header({ onLoginClick }: HeaderProps) {
 
         <div className="flex items-center gap-4">
           <NotificationDropdown notifications={sampleNotifications} />
-          <Button variant="ghost" size="icon">
-            <Settings className="w-5 h-5" />
-          </Button>
 
           {isAuthenticated && user ? (
             <DropdownMenu>
