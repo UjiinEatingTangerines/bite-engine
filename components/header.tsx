@@ -1,6 +1,7 @@
 "use client"
 
-import { Utensils, Settings, LogOut, LogIn } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Utensils, Settings, LogOut, LogIn, UserCog } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationDropdown } from "@/components/notification-dropdown"
@@ -19,6 +20,7 @@ interface HeaderProps {
 }
 
 export function Header({ onLoginClick }: HeaderProps) {
+  const router = useRouter()
   const { user, isAuthenticated, logout } = useAuth()
   // 샘플 알림 데이터 (실제로는 API에서 가져올 데이터)
   const sampleNotifications = [
@@ -80,6 +82,18 @@ export function Header({ onLoginClick }: HeaderProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {user.role === 'admin' && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => router.push('/admin/users')}
+                      className="cursor-pointer"
+                    >
+                      <UserCog className="w-4 h-4 mr-2" />
+                      사용자 관리
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-500 focus:text-red-500">
                   <LogOut className="w-4 h-4 mr-2" />
                   로그아웃

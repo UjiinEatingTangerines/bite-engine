@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Mail, User, LogIn } from "lucide-react"
+import { X, Mail, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { isUserAllowed, getUserByEmail } from "@/lib/allowed-users"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -14,7 +15,6 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
-  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -24,11 +24,6 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
     setError("")
 
     // 유효성 검사
-    if (!name.trim()) {
-      setError("이름을 입력해주세요")
-      return
-    }
-
     if (!email.trim()) {
       setError("이메일을 입력해주세요")
       return
@@ -39,17 +34,29 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
       return
     }
 
+    // 사전 등록된 사용자 확인
+    if (!isUserAllowed(email.trim())) {
+      setError("등록되지 않은 사용자입니다. 관리자에게 문의하세요.")
+      return
+    }
+
     setLoading(true)
 
     try {
+      // 사용자 정보 가져오기
+      const user = getUserByEmail(email.trim())
+      if (!user) {
+        setError("사용자 정보를 찾을 수 없습니다.")
+        return
+      }
+
       // 로그인 처리
-      onLogin({ name: name.trim(), email: email.trim() })
+      onLogin({ name: user.name, email: user.email })
 
       // 모달 닫기
       onClose()
 
       // 폼 초기화
-      setName("")
       setEmail("")
     } catch (err) {
       setError("로그인에 실패했습니다. 다시 시도해주세요.")
@@ -61,7 +68,6 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
   const handleClose = () => {
     if (!loading) {
       setError("")
-      setName("")
       setEmail("")
       onClose()
     }
@@ -123,43 +129,27 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
                   </motion.div>
                 )}
 
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-foreground">
-                    이름
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="홍길동"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      disabled={loading}
-                      className="pl-10"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
                 {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                    이메일
+                    등록된 이메일
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="example@company.com"
+                      placeholder="your-email@skelectlink.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={loading}
                       className="pl-10"
+                      autoFocus
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    사전 등록된 이메일로만 로그인할 수 있습니다
+                  </p>
                 </div>
 
                 {/* Submit Button */}

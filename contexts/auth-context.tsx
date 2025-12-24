@@ -1,11 +1,13 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { getUserByEmail } from "@/lib/allowed-users"
 
 interface User {
   name: string
   email: string
   avatar?: string
+  role?: 'admin' | 'user'
 }
 
 interface AuthContextType {
@@ -37,10 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = (userData: { name: string; email: string }) => {
+    const allowedUser = getUserByEmail(userData.email)
+
     const user: User = {
       name: userData.name,
       email: userData.email,
       avatar: "/professional-smiling-man-headshot.png", // 기본 아바타
+      role: allowedUser?.role || 'user',
     }
 
     setUser(user)
