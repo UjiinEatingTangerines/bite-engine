@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Utensils, Settings, LogOut, LogIn, UserCog } from "lucide-react"
+import { Utensils, Settings, LogOut, LogIn, UserCog, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationDropdown } from "@/components/notification-dropdown"
@@ -82,18 +82,23 @@ export function Header({ onLoginClick }: HeaderProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => router.push('/profile')}
+                  className="cursor-pointer"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  내 프로필
+                </DropdownMenuItem>
                 {user.role === 'admin' && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => router.push('/admin/users')}
-                      className="cursor-pointer"
-                    >
-                      <UserCog className="w-4 h-4 mr-2" />
-                      사용자 관리
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
+                  <DropdownMenuItem
+                    onClick={() => router.push('/admin/users')}
+                    className="cursor-pointer"
+                  >
+                    <UserCog className="w-4 h-4 mr-2" />
+                    사용자 관리
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-500 focus:text-red-500">
                   <LogOut className="w-4 h-4 mr-2" />
                   로그아웃
