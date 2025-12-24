@@ -3,6 +3,7 @@ export interface AllowedUser {
   name: string
   email: string
   role: 'admin' | 'user'
+  avatar?: string
 }
 
 export const ALLOWED_USERS: AllowedUser[] = [
@@ -10,12 +11,14 @@ export const ALLOWED_USERS: AllowedUser[] = [
     name: 'Harry',
     email: 'harry@skelectlink.com',
     role: 'admin',
+    avatar: '/harry-avatar.png',
   },
   // 여기에 추가 사용자를 등록할 수 있습니다
   // {
   //   name: '홍길동',
   //   email: 'hong@skelectlink.com',
   //   role: 'user',
+  //   avatar: '/user-avatar.png', // 선택사항
   // },
 ]
 

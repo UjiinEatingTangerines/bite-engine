@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user: User = {
       name: userData.name,
       email: userData.email,
-      avatar: "/professional-smiling-man-headshot.png", // 기본 아바타
+      avatar: allowedUser?.avatar || "/professional-smiling-man-headshot.png", // 화이트리스트의 아바타 또는 기본 아바타
       role: allowedUser?.role || 'user',
     }
 
