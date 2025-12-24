@@ -1,6 +1,6 @@
 "use client"
 
-import { Utensils, Settings, LogOut } from "lucide-react"
+import { Utensils, Settings, LogOut, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationDropdown } from "@/components/notification-dropdown"
@@ -14,7 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function Header() {
+interface HeaderProps {
+  onLoginClick?: () => void
+}
+
+export function Header({ onLoginClick }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth()
   // 샘플 알림 데이터 (실제로는 API에서 가져올 데이터)
   const sampleNotifications = [
@@ -83,9 +87,16 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Avatar className="w-9 h-9 border-2 border-border opacity-50">
-              <AvatarFallback>?</AvatarFallback>
-            </Avatar>
+            <button
+              onClick={onLoginClick}
+              className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full group"
+            >
+              <Avatar className="w-9 h-9 border-2 border-border hover:border-primary cursor-pointer transition-all hover:opacity-100 opacity-50 group-hover:scale-105">
+                <AvatarFallback className="bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <LogIn className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </AvatarFallback>
+              </Avatar>
+            </button>
           )}
         </div>
       </div>
