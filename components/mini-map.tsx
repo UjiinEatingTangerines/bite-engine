@@ -15,11 +15,11 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
   const hasData = topRestaurants.length > 0
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-card rounded-2xl border border-border p-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Map className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">TOP 3 위치</span>
+          <Map className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">TOP 3 위치</h3>
         </div>
         {hasData && (
           <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} className="text-xs">
