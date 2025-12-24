@@ -1,11 +1,21 @@
 "use client"
 
-import { Utensils, Settings } from "lucide-react"
+import { Utensils, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationDropdown } from "@/components/notification-dropdown"
+import { useAuth } from "@/contexts/auth-context"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Header() {
+  const { user, isAuthenticated, logout } = useAuth()
   // 샘플 알림 데이터 (실제로는 API에서 가져올 데이터)
   const sampleNotifications = [
     // {
@@ -47,10 +57,36 @@ export function Header() {
           <Button variant="ghost" size="icon">
             <Settings className="w-5 h-5" />
           </Button>
-          <Avatar className="w-9 h-9 border-2 border-primary/50">
-            <AvatarImage src="/professional-smiling-man-headshot.png" />
-            <AvatarFallback>H</AvatarFallback>
-          </Avatar>
+
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full">
+                  <Avatar className="w-9 h-9 border-2 border-primary/50 cursor-pointer hover:border-primary transition-colors">
+                    <AvatarImage src={user.avatar || "/professional-smiling-man-headshot.png"} />
+                    <AvatarFallback>{user.name[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div>
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-500 focus:text-red-500">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  로그아웃
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Avatar className="w-9 h-9 border-2 border-border opacity-50">
+              <AvatarFallback>?</AvatarFallback>
+            </Avatar>
+          )}
         </div>
       </div>
     </header>

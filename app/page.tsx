@@ -12,24 +12,28 @@ import { DietaryFilter } from "@/components/dietary-filter"
 import { RestaurantCard } from "@/components/restaurant-card"
 import { MiniMap } from "@/components/mini-map"
 import { Confetti } from "@/components/confetti"
+import { LoginModal } from "@/components/login-modal"
 import { Button } from "@/components/ui/button"
 import { useRestaurants } from "@/hooks/use-restaurants"
 import { useVoteActivities } from "@/hooks/use-vote-activities"
+import { useAuth } from "@/contexts/auth-context"
 import {
   teamScores,
   dietaryFilters,
-  currentUser,
 } from "@/lib/mock-data"
 
 export default function BiteEnginePage() {
   // 실제 데이터 사용
   const { restaurants, loading } = useRestaurants()
   const { activities } = useVoteActivities()
+  const { user, isAuthenticated, login } = useAuth()
 
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [votedRestaurant, setVotedRestaurant] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const [isFinalized, setIsFinalized] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [pendingVoteId, setPendingVoteId] = useState<string | null>(null)
 
   const sortedRestaurants = useMemo(() => {
     let filtered = [...restaurants]
@@ -55,6 +59,13 @@ export default function BiteEnginePage() {
   const aiRecommendation = restaurants.find((r) => r.badges.includes("AI 추천")) || restaurants[0] || null
 
   const handleVote = async (id: string) => {
+    // 로그인 확인
+    if (!isAuthenticated) {
+      setPendingVoteId(id)
+      setShowLoginModal(true)
+      return
+    }
+
     if (votedRestaurant === id) return
 
     const restaurant = restaurants.find((r) => r.id === id)
@@ -66,9 +77,9 @@ export default function BiteEnginePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: currentUser.name,
-          userName: currentUser.name,
-          userAvatar: '/professional-smiling-man-headshot.png',
+          userId: user!.email,
+          userName: user!.name,
+          userAvatar: user!.avatar || '/professional-smiling-man-headshot.png',
           restaurantId: id,
           restaurantName: restaurant.name,
         }),
@@ -81,6 +92,18 @@ export default function BiteEnginePage() {
     } catch (error) {
       console.error('Failed to vote:', error)
       alert('투표에 실패했습니다. 다시 시도해주세요.')
+    }
+  }
+
+  const handleLogin = (userData: { name: string; email: string }) => {
+    login(userData)
+
+    // 로그인 후 대기 중인 투표가 있으면 자동 실행
+    if (pendingVoteId) {
+      setTimeout(() => {
+        handleVote(pendingVoteId)
+        setPendingVoteId(null)
+      }, 100)
     }
   }
 
@@ -109,6 +132,11 @@ export default function BiteEnginePage() {
   return (
     <div className="min-h-screen bg-background">
       <Confetti isActive={showConfetti} />
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+      />
       <Header />
 
       <main className="container mx-auto px-4 py-6">
@@ -116,8 +144,12 @@ export default function BiteEnginePage() {
           {/* Main content area */}
           <div className="lg:col-span-3 space-y-6">
             {/* Smart Match Hero */}
-            {aiRecommendation && (
-              <SmartMatchHero user={currentUser} recommendation={aiRecommendation} onVote={handleVote} />
+            {aiRecommendation && user && (
+              <SmartMatchHero
+                user={{ name: user.name, preferences: ["매운맛", "아시안 요리"], pastDinners: [] }}
+                recommendation={aiRecommendation}
+                onVote={handleVote}
+              />
             )}
 
             {/* Bento Grid - Stats Row */}
