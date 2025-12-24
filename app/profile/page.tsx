@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowLeft, Camera, Upload, Save, History, Trophy, TrendingUp, Mail, Shield, User } from "lucide-react"
+import { ArrowLeft, Camera, Upload, Save, History, Trophy, TrendingUp, Mail, Shield, User, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { supabase } from "@/lib/supabase"
+
+interface VoteHistoryItem {
+  id: string
+  restaurantName: string
+  cuisine: string
+  votedAt: Date
+  isWinner: boolean
+}
+
+interface UserStats {
+  totalVotes: number
+  winRate: string
+  favoriteCuisine: string
+  streak: number
+  joinedAt: Date
+}
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -19,45 +36,112 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string>("")
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState("")
+  const [voteHistory, setVoteHistory] = useState<VoteHistoryItem[]>([])
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
 
   // 로그인 확인
   useEffect(() => {
     if (!isAuthenticated || !user) {
       router.push("/")
+    } else {
+      fetchUserData()
     }
   }, [isAuthenticated, user, router])
 
-  // 투표 히스토리 (실제로는 API에서 가져와야 함)
-  const [voteHistory] = useState([
-    {
-      id: "1",
-      restaurantName: "사쿠라 스시 하우스",
-      cuisine: "일식",
-      votedAt: new Date(Date.now() - 86400000 * 2),
-      isWinner: true,
-    },
-    {
-      id: "2",
-      restaurantName: "서울 키친 BBQ",
-      cuisine: "한식",
-      votedAt: new Date(Date.now() - 86400000 * 5),
-      isWinner: false,
-    },
-    {
-      id: "3",
-      restaurantName: "스파이스 루트",
-      cuisine: "인도식",
-      votedAt: new Date(Date.now() - 86400000 * 7),
-      isWinner: true,
-    },
-  ])
+  const fetchUserData = async () => {
+    if (!user) return
 
-  // 통계 (실제로는 API에서 가져와야 함)
-  const stats = {
-    totalVotes: voteHistory.length,
-    winRate: (voteHistory.filter(v => v.isWinner).length / voteHistory.length * 100).toFixed(0),
-    favoriteCuisine: "일식",
-    streak: 3,
+    setLoading(true)
+    try {
+      // 사용자의 투표 히스토리 가져오기
+      const { data: votes, error: votesError } = await supabase
+        .from('vote_activities')
+        .select(`
+          id,
+          restaurant_name,
+          created_at,
+          restaurant_id
+        `)
+        .eq('user_id', user.email)
+        .order('created_at', { ascending: false })
+
+      if (votesError) throw votesError
+
+      // 각 투표에 대해 레스토랑 정보와 우승 여부 확인
+      const historyWithDetails = await Promise.all(
+        (votes || []).map(async (vote) => {
+          // 레스토랑 정보 가져오기
+          const { data: restaurant } = await supabase
+            .from('restaurants')
+            .select('cuisine')
+            .eq('id', vote.restaurant_id)
+            .single()
+
+          // TODO: 실제로는 dinner_sessions 테이블에서 우승 여부 확인
+          // 현재는 임시로 false로 설정
+          const isWinner = false
+
+          return {
+            id: vote.id,
+            restaurantName: vote.restaurant_name,
+            cuisine: restaurant?.cuisine || '기타',
+            votedAt: new Date(vote.created_at),
+            isWinner,
+          }
+        })
+      )
+
+      setVoteHistory(historyWithDetails)
+
+      // 통계 계산
+      if (historyWithDetails.length > 0) {
+        const totalVotes = historyWithDetails.length
+        const winCount = historyWithDetails.filter(v => v.isWinner).length
+        const winRate = totalVotes > 0 ? ((winCount / totalVotes) * 100).toFixed(0) : '0'
+
+        // 가장 많이 투표한 음식 종류 찾기
+        const cuisineCounts = historyWithDetails.reduce((acc, vote) => {
+          acc[vote.cuisine] = (acc[vote.cuisine] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+
+        const favoriteCuisine = Object.entries(cuisineCounts)
+          .sort((a, b) => b[1] - a[1])[0]?.[0] || '없음'
+
+        // 가입일 (첫 투표일로 추정, 실제로는 users 테이블에서 가져와야 함)
+        const joinedAt = new Date(Math.min(...historyWithDetails.map(v => v.votedAt.getTime())))
+
+        setStats({
+          totalVotes,
+          winRate,
+          favoriteCuisine,
+          streak: totalVotes, // TODO: 실제 연속 투표 계산 로직 필요
+          joinedAt,
+        })
+      } else {
+        // 투표 기록이 없을 경우
+        setStats({
+          totalVotes: 0,
+          winRate: '0',
+          favoriteCuisine: '없음',
+          streak: 0,
+          joinedAt: new Date(), // 현재 날짜로 설정
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error)
+      // 에러 발생 시 빈 통계 설정
+      setStats({
+        totalVotes: 0,
+        winRate: '0',
+        favoriteCuisine: '없음',
+        streak: 0,
+        joinedAt: new Date(),
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,7 +239,7 @@ export default function ProfilePage() {
           </TabsList>
 
           {/* Profile Tab */}
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="min-h-[600px]">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -256,7 +340,13 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">가입일</Label>
-                    <p className="text-foreground font-medium">2024년 12월</p>
+                    <p className="text-foreground font-medium">
+                      {stats ? stats.joinedAt.toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }) : '로딩 중...'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -264,7 +354,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history">
+          <TabsContent value="history" className="min-h-[600px]">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -276,7 +366,12 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {voteHistory.length > 0 ? (
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">데이터 로딩 중...</p>
+                  </div>
+                ) : voteHistory.length > 0 ? (
                   <div className="space-y-3">
                     {voteHistory.map((vote, index) => (
                       <motion.div
@@ -317,9 +412,12 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <History className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">아직 투표 기록이 없습니다</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">투표 히스토리 준비 중</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      투표를 시작하면 기록이 표시됩니다
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -327,75 +425,98 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Stats Tab */}
-          <TabsContent value="stats">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Stats Cards */}
+          <TabsContent value="stats" className="min-h-[600px]">
+            {loading ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
-                    투표 통계
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-primary/10 rounded-lg">
-                      <p className="text-3xl font-bold text-primary">{stats.totalVotes}</p>
-                      <p className="text-sm text-muted-foreground mt-1">총 투표 수</p>
-                    </div>
-                    <div className="text-center p-4 bg-accent/10 rounded-lg">
-                      <p className="text-3xl font-bold text-accent">{stats.winRate}%</p>
-                      <p className="text-sm text-muted-foreground mt-1">승률</p>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-muted-foreground">가장 좋아하는 음식</p>
-                      <p className="font-medium text-foreground">{stats.favoriteCuisine}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">연속 투표 기록</p>
-                      <p className="font-medium text-foreground">{stats.streak}회</p>
-                    </div>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">데이터 로딩 중...</p>
                   </div>
                 </CardContent>
               </Card>
+            ) : stats && stats.totalVotes > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Stats Cards */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5" />
+                      투표 통계
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <p className="text-3xl font-bold text-primary">{stats.totalVotes}</p>
+                        <p className="text-sm text-muted-foreground mt-1">총 투표 수</p>
+                      </div>
+                      <div className="text-center p-4 bg-accent/10 rounded-lg">
+                        <p className="text-3xl font-bold text-accent">{stats.winRate}%</p>
+                        <p className="text-sm text-muted-foreground mt-1">승률</p>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-muted-foreground">가장 좋아하는 음식</p>
+                        <p className="font-medium text-foreground">{stats.favoriteCuisine}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">연속 투표 기록</p>
+                        <p className="font-medium text-foreground">{stats.streak}회</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Achievement Card */}
+                {/* Achievement Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Trophy className="w-5 h-5" />
+                      달성 업적
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg">
+                        <Trophy className="w-8 h-8 text-accent" />
+                        <div>
+                          <p className="font-medium text-foreground">첫 투표</p>
+                          <p className="text-xs text-muted-foreground">첫 번째 투표를 완료했습니다</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                        <Trophy className="w-8 h-8 text-primary" />
+                        <div>
+                          <p className="font-medium text-foreground">승리의 맛</p>
+                          <p className="text-xs text-muted-foreground">투표한 레스토랑이 선정되었습니다</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg opacity-50">
+                        <Trophy className="w-8 h-8 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-foreground">열정적인 투표자</p>
+                          <p className="text-xs text-muted-foreground">10회 투표 달성 (진행 중: {stats.totalVotes}/10)</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Trophy className="w-5 h-5" />
-                    달성 업적
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg">
-                      <Trophy className="w-8 h-8 text-accent" />
-                      <div>
-                        <p className="font-medium text-foreground">첫 투표</p>
-                        <p className="text-xs text-muted-foreground">첫 번째 투표를 완료했습니다</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
-                      <Trophy className="w-8 h-8 text-primary" />
-                      <div>
-                        <p className="font-medium text-foreground">승리의 맛</p>
-                        <p className="text-xs text-muted-foreground">투표한 레스토랑이 선정되었습니다</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg opacity-50">
-                      <Trophy className="w-8 h-8 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-foreground">열정적인 투표자</p>
-                        <p className="text-xs text-muted-foreground">10회 투표 달성 (진행 중: {stats.totalVotes}/10)</p>
-                      </div>
-                    </div>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">통계 준비 중</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      투표를 시작하면 통계가 표시됩니다
+                    </p>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
