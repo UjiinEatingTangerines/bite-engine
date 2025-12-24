@@ -11,7 +11,7 @@ import { isUserAllowed, getUserByEmail } from "@/lib/allowed-users"
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  onLogin: (userData: { name: string; email: string }) => void
+  onLogin: (userData: { name: string; email: string }) => Promise<void>
 }
 
 export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
@@ -34,24 +34,27 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
       return
     }
 
-    // 사전 등록된 사용자 확인
-    if (!isUserAllowed(email.trim())) {
-      setError("등록되지 않은 사용자입니다. 관리자에게 문의하세요.")
-      return
-    }
-
     setLoading(true)
 
     try {
+      // 사전 등록된 사용자 확인
+      const isAllowed = await isUserAllowed(email.trim())
+      if (!isAllowed) {
+        setError("등록되지 않은 사용자입니다. 관리자에게 문의하세요.")
+        setLoading(false)
+        return
+      }
+
       // 사용자 정보 가져오기
-      const user = getUserByEmail(email.trim())
+      const user = await getUserByEmail(email.trim())
       if (!user) {
         setError("사용자 정보를 찾을 수 없습니다.")
+        setLoading(false)
         return
       }
 
       // 로그인 처리
-      onLogin({ name: user.name, email: user.email })
+      await onLogin({ name: user.name, email: user.email })
 
       // 모달 닫기
       onClose()

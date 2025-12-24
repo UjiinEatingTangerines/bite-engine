@@ -3,39 +3,56 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowLeft, UserPlus, Shield, User, Mail, Trash2 } from "lucide-react"
+import { ArrowLeft, UserPlus, Shield, User, Mail, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
-import { ALLOWED_USERS, isAdmin } from "@/lib/allowed-users"
+import { getAllUsers, isAdmin, addUser, deleteUser } from "@/lib/allowed-users"
 import type { AllowedUser } from "@/lib/allowed-users"
 
 export default function UserManagementPage() {
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
-  const [users, setUsers] = useState<AllowedUser[]>(ALLOWED_USERS)
+  const [users, setUsers] = useState<AllowedUser[]>([])
   const [newName, setNewName] = useState("")
   const [newEmail, setNewEmail] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
-  // 관리자 권한 확인
+  // 사용자 목록 불러오기
+  const fetchUsers = async () => {
+    setLoading(true)
+    const usersList = await getAllUsers()
+    setUsers(usersList)
+    setLoading(false)
+  }
+
+  // 관리자 권한 확인 및 사용자 목록 불러오기
   useEffect(() => {
     if (!isAuthenticated || !user) {
       router.push("/")
       return
     }
 
-    if (!isAdmin(user.email)) {
-      alert("관리자만 접근할 수 있습니다.")
-      router.push("/")
+    const checkAdmin = async () => {
+      const adminStatus = await isAdmin(user.email)
+      if (!adminStatus) {
+        alert("관리자만 접근할 수 있습니다.")
+        router.push("/")
+        return
+      }
+      fetchUsers()
     }
+
+    checkAdmin()
   }, [isAuthenticated, user, router])
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setSuccess("")
@@ -62,24 +79,45 @@ export default function UserManagementPage() {
       return
     }
 
-    // 새 사용자 추가 (실제로는 파일에 저장해야 함)
-    const newUser: AllowedUser = {
+    setSubmitting(true)
+
+    // Supabase에 사용자 추가
+    const result = await addUser({
       name: newName.trim(),
       email: newEmail.trim(),
       role: 'user',
+    })
+
+    if (result.success) {
+      setSuccess(`${newName} 사용자가 추가되었습니다!`)
+      setNewName("")
+      setNewEmail("")
+      // 사용자 목록 새로고침
+      fetchUsers()
+    } else {
+      setError(result.error || "사용자 추가에 실패했습니다")
     }
 
-    setUsers([...users, newUser])
-    setSuccess(`${newName} 사용자가 추가되었습니다!`)
-    setNewName("")
-    setNewEmail("")
-
-    // 실제 구현 시 여기서 파일에 저장하거나 DB에 저장
-    console.log("새 사용자 추가:", newUser)
-    console.log("현재 사용자 목록:", [...users, newUser])
+    setSubmitting(false)
   }
 
-  if (!isAuthenticated || !user || !isAdmin(user.email)) {
+  const handleDeleteUser = async (email: string, name: string) => {
+    if (!confirm(`${name} 사용자를 삭제하시겠습니까?`)) {
+      return
+    }
+
+    const result = await deleteUser(email)
+
+    if (result.success) {
+      setSuccess(`${name} 사용자가 삭제되었습니다`)
+      // 사용자 목록 새로고침
+      fetchUsers()
+    } else {
+      setError(result.error || "사용자 삭제에 실패했습니다")
+    }
+  }
+
+  if (!isAuthenticated || !user) {
     return null
   }
 
@@ -153,6 +191,7 @@ export default function UserManagementPage() {
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       className="pl-10"
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -169,20 +208,28 @@ export default function UserManagementPage() {
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
                       className="pl-10"
+                      disabled={submitting}
                     />
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
-                <UserPlus className="w-4 h-4 mr-2" />
-                사용자 추가
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    추가 중...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    사용자 추가
+                  </>
+                )}
               </Button>
 
-              <p className="text-xs text-center text-amber-500/80 bg-amber-500/10 border border-amber-500/20 rounded p-2">
-                ⚠️ 주의: 현재 버전에서는 페이지를 새로고침하면 추가한 사용자가 초기화됩니다.
-                <br />
-                영구 저장을 위해서는 lib/allowed-users.ts 파일을 직접 수정해주세요.
+              <p className="text-xs text-center text-blue-500/80 bg-blue-500/10 border border-blue-500/20 rounded p-2">
+                ✓ 사용자는 Supabase 데이터베이스에 영구적으로 저장됩니다
               </p>
             </form>
           </CardContent>
@@ -200,54 +247,56 @@ export default function UserManagementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {users.map((u, index) => (
-                <motion.div
-                  key={u.email}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      {u.role === 'admin' ? (
-                        <Shield className="w-5 h-5 text-primary" />
-                      ) : (
-                        <User className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">{u.name}</p>
-                        {u.role === 'admin' && (
-                          <Badge variant="default" className="text-xs">
-                            관리자
-                          </Badge>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-12 h-12 text-muted-foreground/30 mb-3 animate-spin" />
+                <p className="text-sm text-muted-foreground">사용자 목록 로딩 중...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {users.map((u, index) => (
+                  <motion.div
+                    key={u.email}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        {u.role === 'admin' ? (
+                          <Shield className="w-5 h-5 text-primary" />
+                        ) : (
+                          <User className="w-5 h-5 text-muted-foreground" />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{u.email}</p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground">{u.name}</p>
+                          {u.role === 'admin' && (
+                            <Badge variant="default" className="text-xs">
+                              관리자
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{u.email}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {u.role !== 'admin' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-red-500"
-                      onClick={() => {
-                        if (confirm(`${u.name} 사용자를 삭제하시겠습니까?`)) {
-                          setUsers(users.filter(user => user.email !== u.email))
-                          setSuccess(`${u.name} 사용자가 삭제되었습니다`)
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+                    {u.role !== 'admin' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-red-500"
+                        onClick={() => handleDeleteUser(u.email, u.name)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -259,15 +308,12 @@ export default function UserManagementPage() {
                 <Shield className="w-5 h-5 text-blue-500" />
               </div>
               <div className="space-y-2 text-sm">
-                <p className="font-medium text-foreground">영구 저장 방법</p>
+                <p className="font-medium text-foreground">Supabase 데이터베이스 연동</p>
                 <p className="text-muted-foreground">
-                  사용자를 영구적으로 등록하려면 다음 파일을 수정하세요:
+                  모든 사용자 정보는 Supabase의 users 테이블에 저장됩니다.
                 </p>
-                <code className="block bg-background/50 border border-border rounded p-2 text-xs">
-                  lib/allowed-users.ts
-                </code>
                 <p className="text-muted-foreground text-xs">
-                  ALLOWED_USERS 배열에 새로운 사용자 객체를 추가하면 됩니다.
+                  추가된 사용자는 즉시 로그인할 수 있으며, 데이터는 영구적으로 보존됩니다.
                 </p>
               </div>
             </div>

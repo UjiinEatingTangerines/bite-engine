@@ -13,7 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
-  login: (userData: { name: string; email: string }) => void
+  login: (userData: { name: string; email: string }) => Promise<void>
   logout: () => void
 }
 
@@ -38,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = (userData: { name: string; email: string }) => {
-    const allowedUser = getUserByEmail(userData.email)
+  const login = async (userData: { name: string; email: string }) => {
+    const allowedUser = await getUserByEmail(userData.email)
 
     const user: User = {
       name: userData.name,

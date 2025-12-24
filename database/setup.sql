@@ -1,7 +1,18 @@
 -- BiteEngine 데이터베이스 셋업 스크립트
 -- Supabase SQL Editor에서 실행하세요
 
--- 1. 레스토랑 테이블
+-- 1. 사용자 테이블
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  avatar TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. 레스토랑 테이블
 CREATE TABLE IF NOT EXISTS restaurants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -18,7 +29,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. 투표 테이블
+-- 3. 투표 테이블
 CREATE TABLE IF NOT EXISTS votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
@@ -28,7 +39,7 @@ CREATE TABLE IF NOT EXISTS votes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. 투표 활동 로그 테이블
+-- 4. 투표 활동 로그 테이블
 CREATE TABLE IF NOT EXISTS vote_activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
@@ -40,7 +51,7 @@ CREATE TABLE IF NOT EXISTS vote_activities (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. 회식 세션 테이블 (투표 마감 관리)
+-- 5. 회식 세션 테이블 (투표 마감 관리)
 CREATE TABLE IF NOT EXISTS dinner_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
@@ -53,6 +64,8 @@ CREATE TABLE IF NOT EXISTS dinner_sessions (
 );
 
 -- 인덱스 생성 (성능 최적화)
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_votes_restaurant ON votes(restaurant_id);
 CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(user_id);
 CREATE INDEX IF NOT EXISTS idx_vote_activities_created ON vote_activities(created_at DESC);
@@ -68,6 +81,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 트리거 설정
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 DROP TRIGGER IF EXISTS update_restaurants_updated_at ON restaurants;
 CREATE TRIGGER update_restaurants_updated_at
   BEFORE UPDATE ON restaurants
@@ -81,12 +100,18 @@ CREATE TRIGGER update_dinner_sessions_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Row Level Security (RLS) 활성화
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE restaurants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vote_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dinner_sessions ENABLE ROW LEVEL SECURITY;
 
 -- RLS 정책 - 모든 사용자가 읽기 가능
+DROP POLICY IF EXISTS "Anyone can read users" ON users;
+CREATE POLICY "Anyone can read users"
+  ON users FOR SELECT
+  USING (true);
+
 DROP POLICY IF EXISTS "Anyone can read restaurants" ON restaurants;
 CREATE POLICY "Anyone can read restaurants"
   ON restaurants FOR SELECT
@@ -122,6 +147,27 @@ DROP POLICY IF EXISTS "Anyone can insert activities" ON vote_activities;
 CREATE POLICY "Anyone can insert activities"
   ON vote_activities FOR INSERT
   WITH CHECK (true);
+
+-- RLS 정책 - 사용자 관리 (관리자만 가능, 현재는 모든 사용자 허용)
+DROP POLICY IF EXISTS "Anyone can insert users" ON users;
+CREATE POLICY "Anyone can insert users"
+  ON users FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update users" ON users;
+CREATE POLICY "Anyone can update users"
+  ON users FOR UPDATE
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can delete users" ON users;
+CREATE POLICY "Anyone can delete users"
+  ON users FOR DELETE
+  USING (true);
+
+-- 초기 관리자 계정 삽입
+INSERT INTO users (name, email, role, avatar)
+VALUES ('Harry', 'harry@skelectlink.com', 'admin', '/harry-avatar.png')
+ON CONFLICT (email) DO NOTHING;
 
 -- 완료 메시지
 SELECT 'BiteEngine 데이터베이스 셋업 완료!' AS message;
