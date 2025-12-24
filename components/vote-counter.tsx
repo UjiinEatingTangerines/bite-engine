@@ -55,8 +55,8 @@ export function VoteCounter({ totalVotes, hasData = true }: VoteCounterProps) {
           <p className="text-center text-sm text-muted-foreground mt-4">총 20명의 팀원 중</p>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
-          <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <Clock className="w-10 h-10 text-muted-foreground/30 mb-3 animate-pulse" />
           <p className="text-sm text-muted-foreground">투표 대기 중</p>
           <p className="text-xs text-muted-foreground/70 mt-1">첫 투표를 기다리고 있습니다</p>
         </div>
