@@ -15,7 +15,7 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
   const hasData = topRestaurants.length > 0
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-6">
+    <div className="bg-card rounded-2xl border border-border p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Map className="w-5 h-5 text-primary" />
@@ -109,7 +109,7 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
       </AnimatePresence>
 
       {!isOpen && hasData && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 content-center">
           {topRestaurants.slice(0, 3).map((restaurant, index) => (
             <div
               key={restaurant.id}
@@ -128,7 +128,7 @@ export function MiniMap({ topRestaurants }: MiniMapProps) {
       )}
 
       {!hasData && (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
           <Clock className="w-10 h-10 text-muted-foreground/30 mb-3 animate-pulse" />
           <p className="text-sm text-muted-foreground">위치 정보 준비 중</p>
           <p className="text-xs text-muted-foreground/70 mt-1">레스토랑이 추가되면 표시됩니다</p>

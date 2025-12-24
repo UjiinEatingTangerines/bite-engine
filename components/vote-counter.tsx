@@ -26,14 +26,14 @@ export function VoteCounter({ totalVotes, hasData = true }: VoteCounterProps) {
   const digits = String(displayVotes).padStart(3, "0").split("")
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-6">
+    <div className="bg-card rounded-2xl border border-border p-6 h-full flex flex-col">
       <div className="flex items-center gap-2 mb-4">
         <Users className="w-5 h-5 text-primary" />
         <h3 className="font-semibold text-foreground">총 투표 수</h3>
       </div>
 
       {hasData ? (
-        <>
+        <div className="flex-1 flex flex-col justify-center">
           <div className="flex items-center justify-center gap-1">
             <AnimatePresence mode="popLayout">
               {digits.map((digit, index) => (
@@ -53,9 +53,9 @@ export function VoteCounter({ totalVotes, hasData = true }: VoteCounterProps) {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-4">총 20명의 팀원 중</p>
-        </>
+        </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
           <Clock className="w-12 h-12 text-muted-foreground/30 mb-3 animate-pulse" />
           <p className="text-sm text-muted-foreground">투표 대기 중</p>
           <p className="text-xs text-muted-foreground/70 mt-1">첫 투표를 기다리고 있습니다</p>
